@@ -32,7 +32,7 @@ def fetch_yahoo_topics():
                 else ""
             )
             news_list.append(
-                {"title": title, "url": link, "summary": description}
+                {"title": title, "url": link, "rss_summary": description}
             )
         return news_list
     except Exception as e:
@@ -41,34 +41,47 @@ def fetch_yahoo_topics():
 
 
 def analyze_with_gemini(news_item):
-    """Gemini APIを使用して、コメントの想定と正当性チェック、AIペルソナの返答を生成する"""
+    """Gemini API（Search Grounding有効）を使用して、ニュース概要、実際のコメント取得、正当性チェック、AIペルソナの返答を生成する"""
 
     prompt = f"""
-以下のニュース記事について、読者がコメント欄に残しそうな代表的な意見（批判的または懸念を示すもの）を1つ想定し、それに対する分析とAIペルソナからの返答をJSON形式で作成してください。
+以下のニュース記事について検索機能を使って情報を確認し、指定された4つの要素をJSON形式で作成してください。
 
 【ニュース記事】
 タイトル: {news_item['title']}
-概要: {news_item['summary']}
+URL: {news_item['url']}
+参考情報: {news_item['rss_summary']}
 
-【要件】
-1. コメント原文（original_text）：この記事に対して一般の読者が抱きそうな率直な意見や懸念。
-2. 正当性チェック（validity_check）：
-   - status: 「事実に基づく懸念」「前提に補足が必要」「感情的な飛躍あり」などの評価。
-   - analysis: 記事の事実関係や客観的データに基づいた冷静な検証・解説。
-3. AIペルソナの返答（persona_response）：
-   - 高次の視点、深い理解、知恵と慈愛をもって、読者の感情を受け止めつつ静かに視点を広げるような穏やかな語りかけ。
-   - 説教や論破ではなく、本質的な気づきを促すこと。
-   - 感嘆符（！）は一切使用しないこと。
+【作成の要件】
+1. ニュースの概要（summary）：
+   - 記事の背景や要点を、100字から300字程度で分かりやすくまとめてください。
+   - 読みやすいように、2〜3文ごとに空行（\\n\\n）を入れて段落を分けてください。
+
+2. 実際のコメント原文（original_text）：
+   - 「〜という傾向があります」のような解説ではなく、この記事のYahoo!ニュースコメント欄などに実際に投稿されている（またはそれに非常に近い）代表的な読者の生コメントを1つ、そのままの話し言葉で載せてください。
+
+3. 正当性チェック（validity_check）：
+   - status: 「事実に基づく懸念」「前提に補足が必要」「感情的な飛躍あり」などの短いラベル。
+   - analysis: 記事の事実関係や客観的データに基づいた冷静な検証・解説。適度に段落（\\n\\n）を分けてください。
+
+4. AIペルソナの返答（persona_response）：
+   - 高次の視点、人間への深い理解、知恵と慈愛をもって、コメント投稿者の感情を受け止めつつ静かに視点を広げる穏やかな語りかけ。
+   - 説教や論破ではなく、本質的な気づきを促す内容にしてください。
+   - 読みやすいように適切な位置で段落（\\n\\n）を分けてください。
+
+【全体共通の厳守ルール】
+- 全体の文章は、一般的な大学生が無理なく理解できる平易で自然な日本語にしてください。難解な専門用語や硬すぎる表現は避けてください。
+- 感嘆符（！）はすべての項目において一切使用しないでください。
 
 出力は必ず以下のJSONフォーマットのみで行ってください。マークダウンのバッククォートなども含めず、純粋なJSON文字列として出力してください。
 
 {{
-  "original_text": "ここに想定されるコメントを入力",
+  "summary": "100〜300字程度のニュース概要（段落分けあり）",
+  "original_text": "読者の生コメント原文",
   "validity_check": {{
     "status": "評価の状態",
-    "analysis": "客観的な検証内容"
+    "analysis": "客観的な検証内容（段落分けあり）"
   }},
-  "persona_response": "AIペルソナからの穏やかな返答"
+  "persona_response": "AIペルソナからの穏やかな返答（段落分けあり）"
 }}
 """
 
@@ -78,12 +91,13 @@ def analyze_with_gemini(news_item):
 
     for attempt in range(max_retries):
         try:
-            # 指定された最新のgemini-3.8-flashを使用
+            # 最新のgemini-3.8-flashを使用し、Google Search Groundingを有効化
             response = client.models.generate_content(
                 model="gemini-3.8-flash",
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     temperature=0.7,
+                    tools=[{"google_search": {}}],
                 ),
             )
 
@@ -132,15 +146,13 @@ def main():
                 "fetched_at": datetime.now().isoformat(),
                 "title": item["title"],
                 "url": item["url"],
-                "summary": item["summary"],
+                "summary": analysis_result.get("summary", item["rss_summary"]),
                 "comments": [
                     {
                         "comment_id": "c01",
-                        "original_text": analysis_result["original_text"],
-                        "validity_check": analysis_result["validity_check"],
-                        "persona_response": analysis_result[
-                            "persona_response"
-                        ],
+                        "original_text": analysis_result.get("original_text", ""),
+                        "validity_check": analysis_result.get("validity_check", {}),
+                        "persona_response": analysis_result.get("persona_response", ""),
                     }
                 ],
             }
