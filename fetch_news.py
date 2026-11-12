@@ -8,7 +8,6 @@ from google import genai
 from google.genai import types
 
 # APIキーの設定（環境変数から取得）
-# 事前にターミナル等で export GEMINI_API_KEY="あなたのキー" を実行しておきます
 API_KEY = os.environ.get("GEMINI_API_KEY")
 client = genai.Client(api_key=API_KEY)
 
@@ -24,7 +23,7 @@ def fetch_yahoo_topics():
         items = soup.find_all("item")
 
         news_list = []
-        for item in items[:3]:  # まずは上位3件を対象にする
+        for item in items[:3]:  # 上位3件を対象にする
             title = item.find("title").text
             link = item.find("link").text
             description = (
@@ -79,8 +78,9 @@ def analyze_with_gemini(news_item):
 
     for attempt in range(max_retries):
         try:
+            # 指定された最新のgemini-3.8-flashを使用
             response = client.models.generate_content(
-                model="gemini-2.5-flash",
+                model="gemini-3.8-flash",
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     temperature=0.7,
@@ -88,7 +88,6 @@ def analyze_with_gemini(news_item):
             )
 
             text = response.text.strip()
-            # バッククォートが含まれている場合の簡易クリーニング
             if text.startswith("```json"):
                 text = text[7:]
             if text.startswith("```"):
@@ -147,10 +146,8 @@ def main():
             }
             processed_data.append(article_entry)
 
-        # API制限やサーバー負荷配慮のため少し待機
         time.sleep(2)
 
-    # JSONファイルに保存
     output_filename = "comments_analysis.json"
     with open(output_filename, "w", encoding="utf-8") as f:
         json.dump(processed_data, f, ensure_ascii=False, indent=2)
