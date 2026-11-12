@@ -3,3 +3,4 @@ google-genai
 beautifulsoup4
 pandas
 requests
+lxml
