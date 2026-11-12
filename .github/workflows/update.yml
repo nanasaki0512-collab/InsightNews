@@ -2,14 +2,15 @@ name: Update News and Analysis
 
 on:
   schedule:
-    - cron: '0 */6 * * *' # 6時間ごとに自動実行（お好みで変更可能）
-  workflow_dispatch:      # GitHubの画面から手動でも実行できるようにする
+    # 日本時間の朝6:00 (UTC 21:00) と 昼12:00 (UTC 3:00) に自動実行
+    - cron: '0 21,3 * * *'
+  workflow_dispatch:      # 手動でも実行可能
 
 jobs:
   run-python-script:
     runs-on: ubuntu-latest
     steps:
-      - name: 蔵書のチェックアウト (Checkout Repository)
+      - name: リポジトリのチェックアウト
         uses: actions/checkout@v4
 
       - name: Pythonのセットアップ
