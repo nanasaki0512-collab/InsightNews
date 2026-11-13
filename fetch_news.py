@@ -162,5 +162,5 @@ def main():
     print(f"処理が完了しました。結果を {output_filename} に保存しました。")
 
 
-if __name__ ==0:
+if __name__ == "__main__":
     main()
