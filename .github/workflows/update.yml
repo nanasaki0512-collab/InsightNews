@@ -2,8 +2,8 @@ name: Update News and Analysis
 
 on:
   schedule:
-    # 日本時間の朝6:00 (UTC 21:00) と 昼12:00 (UTC 3:00) に自動実行
-    - cron: '0 21,3 * * *'
+    # 日本時間の 6:00 (UTC 21:00) と 12:00 (UTC 03:00) に自動実行
+    - cron: '0 3,21 * * *'
   workflow_dispatch:      # 手動でも実行可能
 
 jobs:
