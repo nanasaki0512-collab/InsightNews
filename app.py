@@ -61,20 +61,20 @@ st.markdown(
         border: 1px solid #DCD5CD;
         border-radius: 8px;
         padding: 16px;
-        margin: 14px 0;
+        margin: 12px 0;
         font-size: 0.93rem;
         line-height: 1.75;
     }
-    
-    /* AIペルソナの返答ボックス */
-    .persona-box {
+
+    /* 心理状態分析のボックス */
+    .psychology-box {
         background-color: #FAF6EE;
         border: 1px solid #D8CFC4;
         border-radius: 8px;
-        padding: 18px;
-        margin-top: 14px;
-        font-size: 0.96rem;
-        line-height: 1.8;
+        padding: 16px;
+        margin-top: 12px;
+        font-size: 0.94rem;
+        line-height: 1.75;
     }
     
     .section-title {
@@ -112,7 +112,7 @@ def load_data():
 def main():
     st.title("InsightNews")
     st.markdown(
-        "日々の出来事に対する多様な意見を客観的に見つめ直し、高次の視点から静かな気づきを得るための空間です。"
+        "日々の出来事に対する多様な意見を客観的な事実と心理の両面から見つめ直し、冷静な理解につなげるための空間です。"
     )
     st.markdown("---")
 
@@ -155,7 +155,7 @@ def main():
                     unsafe_allow_html=True,
                 )
 
-                # 正当性チェック
+                # 正当性チェック（客観的検証）
                 val_check = comment.get("validity_check", {})
                 status = val_check.get("status", "")
                 analysis = format_paragraphs(val_check.get("analysis", ""))
@@ -164,12 +164,15 @@ def main():
                     unsafe_allow_html=True,
                 )
 
-                # AIペルソナの返答
-                persona_resp = format_paragraphs(comment.get("persona_response", ""))
-                st.markdown(
-                    f'<div class="persona-box"><div class="section-title">AIペルソナからの気づき</div>{persona_resp}</div>',
-                    unsafe_allow_html=True,
+                # コメントの心理状態分析
+                psych_analysis = format_paragraphs(
+                    comment.get("psychology_analysis", "")
                 )
+                if psych_analysis:
+                    st.markdown(
+                        f'<div class="psychology-box"><div class="section-title">心理状態の分析</div>{psych_analysis}</div>',
+                        unsafe_allow_html=True,
+                    )
 
             st.markdown("</div>", unsafe_allow_html=True)
 
